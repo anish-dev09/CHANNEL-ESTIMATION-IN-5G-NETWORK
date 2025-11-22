@@ -1,0 +1,132 @@
+# Experiment Configuration for AI-Assisted Channel Estimation in 5G
+
+# OFDM Parameters
+ofdm:
+  fft_size: 1024              # Number of subcarriers
+  cp_length: 72               # Cyclic prefix length (samples)
+  subcarrier_spacing: 15000   # Hz (15 kHz for sub-6 GHz)
+  num_symbols: 14             # OFDM symbols per frame
+  useful_subcarriers: 600     # Actual data + pilot subcarriers
+
+# MIMO Configuration
+mimo:
+  num_tx_antennas: 2          # Transmit antennas
+  num_rx_antennas: 2          # Receive antennas
+  
+# Channel Models
+channel:
+  models: ['EPA', 'EVA', 'ETU']  # Extended Pedestrian A, Extended Vehicular A, Extended Typical Urban
+  doppler_hz: [10, 50, 100, 200]  # Corresponds to ~10, 60, 120, 240 km/h at 2 GHz
+  carrier_freq: 2.0e9         # 2 GHz
+  max_delay_spread: 5.0e-6    # 5 microseconds
+  
+# Pilot Configuration
+pilots:
+  density: [0.01, 0.02, 0.05, 0.10]  # Percentage of resource elements
+  pattern: 'comb'             # 'comb', 'block', or 'scattered'
+  interpolation: 'linear'     # For baseline estimators
+  
+# Simulation Parameters
+simulation:
+  snr_range: [-5, 0, 5, 10, 15, 20, 25, 30]  # dB
+  num_frames: 1000            # Frames per configuration
+  modulation: 'QPSK'          # 'QPSK', '16QAM', '64QAM'
+  
+# Dataset Generation
+dataset:
+  train_samples: 50000
+  val_samples: 5000
+  test_samples: 10000
+  save_format: 'npz'          # 'npz' or 'h5'
+  normalize: true
+  augmentation: false
+  
+# Model Architecture
+model:
+  type: 'CNN'                 # 'CNN', 'LSTM', 'CNN_LSTM', 'Transformer'
+  
+  # CNN Config
+  cnn:
+    input_channels: 2         # Real and imaginary
+    hidden_channels: [64, 128, 256, 128, 64]
+    kernel_size: 3
+    activation: 'relu'
+    dropout: 0.1
+    
+  # LSTM Config
+  lstm:
+    hidden_size: 256
+    num_layers: 3
+    bidirectional: true
+    dropout: 0.2
+    
+  # Hybrid CNN-LSTM
+  hybrid:
+    cnn_channels: [32, 64, 128]
+    lstm_hidden: 256
+    lstm_layers: 2
+    
+# Training Parameters
+training:
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.001
+  optimizer: 'adam'           # 'adam', 'sgd', 'adamw'
+  lr_scheduler: 'cosine'      # 'cosine', 'step', 'plateau'
+  weight_decay: 1.0e-5
+  gradient_clip: 1.0
+  
+  # Loss function
+  loss: 'mse'                 # 'mse', 'mae', 'huber'
+  loss_weights:
+    channel_mse: 1.0
+    ber_penalty: 0.0          # Optional: add BER as auxiliary loss
+    
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 15
+    min_delta: 1.0e-4
+    
+  # Checkpointing
+  checkpoint:
+    save_best: true
+    save_freq: 5              # Save every N epochs
+    
+# Evaluation
+evaluation:
+  metrics: ['mse', 'nmse', 'ber', 'ser']
+  plot_snr_range: [-5, 30]
+  pilot_densities: [0.01, 0.02, 0.05, 0.10]
+  
+# Baseline Estimators
+baseline:
+  ls:
+    enabled: true
+  mmse:
+    enabled: true
+    estimate_covariance: false  # Use theoretical or estimated
+    
+# Logging and Visualization
+logging:
+  tensorboard: true
+  wandb: false
+  log_interval: 10            # Log every N batches
+  save_predictions: true
+  
+# Computational Resources
+compute:
+  device: 'auto'              # 'auto', 'cpu', 'cuda'
+  num_workers: 4
+  pin_memory: true
+  mixed_precision: false      # Use AMP for faster training
+  
+# Reproducibility
+seed: 42
+
+# Paths
+paths:
+  data_dir: './data'
+  model_dir: './models'
+  results_dir: './results'
+  log_dir: './logs'
